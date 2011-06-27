@@ -12,19 +12,19 @@ var	router = new(Router).Init(100)
 
 //package functions
 //get
-func Get(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func Get(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.Get(urlquery , handler)
 }
 //post
-func Post(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func Post(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.Post(urlquery , handler)
 }
 //delete
-func Delete(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func Delete(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.Delete(urlquery , handler)
 }
 //put
-func Put(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func Put(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.Put(urlquery , handler)
 }
 //run
@@ -34,7 +34,7 @@ func Run(address string){
 //structs
 type Route struct {
 	urlMap string //a map of a url
-	handler func(w http.ResponseWriter, r *http.Request) //handler function
+	handler func(w http.ResponseWriter, r *http.Request, v map[string] string) //handler function
 }
 
 type Router struct {
@@ -54,7 +54,7 @@ func (router *Router) Init(routecap int) *Router{
 	return router
 }
 
-func (router *Router) AddRoute(method string, urlquery string, handler func(w http.ResponseWriter, r *http.Request)) {
+func (router *Router) AddRoute(method string, urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)) {
 	//add route to proper method
 	var route Route
 	route.urlMap = urlquery
@@ -80,16 +80,16 @@ func (router *Router) AddRoute(method string, urlquery string, handler func(w ht
 	return
 }
 
-func (router *Router) Post(urlquery string,handler func(w http.ResponseWriter, r *http.Request)){
+func (router *Router) Post(urlquery string,handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.AddRoute("post", urlquery, handler)
 }
-func (router *Router) Get(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func (router *Router) Get(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.AddRoute("get", urlquery, handler)
 }
-func (router *Router) Delete(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func (router *Router) Delete(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.AddRoute("delete", urlquery, handler)
 }
-func (router *Router) Put(urlquery string, handler func(w http.ResponseWriter, r *http.Request)){
+func (router *Router) Put(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v map[string] string)){
 	router.AddRoute("Put", urlquery, handler)
 }
 
@@ -120,6 +120,7 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request){
 //end router functions
 
 func findRouterMatch(routes []Route, url string,w http.ResponseWriter, r *http.Request ) bool{
+	//todo:  add hooks for before and after call
 	for _ ,value := range routes {
 		startlocation := strings.Index(value.urlMap, "{")
 		valuemap := map[string] string{} 
@@ -128,12 +129,14 @@ func findRouterMatch(routes []Route, url string,w http.ResponseWriter, r *http.R
 		switch{
 		default:
 			//create regex
+			//init regex
 			urlregex := "^"
 			path := strings.Split(value.urlMap,"{",-1)
 			for _ , fragment := range path{
 				varcheck := strings.Index(fragment,":")
 				switch{
 				default:
+					//no special characters found
 					urlregex += fragment
 				case varcheck >= 0:
 					//it is a variable
@@ -145,6 +148,7 @@ func findRouterMatch(routes []Route, url string,w http.ResponseWriter, r *http.R
 					rx := regexp.MustCompile(urlregex)
 					varstring := rx.ReplaceAllString(url,"")
 					rx = regexp.MustCompile("[a-zA-Z0-9_]*")
+					//get filtered string
 					matched := rx.FindStringSubmatch(varstring)
 					switch {
 					default:
@@ -152,12 +156,11 @@ func findRouterMatch(routes []Route, url string,w http.ResponseWriter, r *http.R
 					case matched != nil:
 						valuemap[variablename] = matched[0]
 					}
-						
-					// urlregex += "[a-zA-Z0-9_]"
 					urlregex += "[^/]"
 					//get leftover text
 					if len(bracketfragment) > 1 && bracketfragment[1] != "" {
 						//replace . with \. 
+						//todo:  look into other characters that need to be escaped
 						urlregex += strings.Replace(bracketfragment[1], ".", "\\.",-1)
 					}
 				//need to handle * and  *.*
@@ -170,18 +173,15 @@ func findRouterMatch(routes []Route, url string,w http.ResponseWriter, r *http.R
 			if matched == ""{
 				fmt.Printf("Route executing %s\n", value.urlMap)
 				fmt.Printf("Regex match regex:%s , matched string:%s\n", rx.String(), url)
-				for vkey,vvalue := range valuemap {
-					fmt.Printf("varname:%s , value:%s\n", vkey,vvalue)
-				}
-				value.handler(w , r)
+				value.handler(w , r, valuemap)
 				return true
 			}
 		case startlocation < 0:
+			//this is when no "{" is found so just does a regular string compare
 			if url == value.urlMap {
-				//create variable map
 				//set defaults(if not set) for offset, limit, select
 				fmt.Printf("Route executing %s\n", value.urlMap)
-				value.handler(w , r)
+				value.handler(w , r, valuemap)
 				return true
 			}
 		}
