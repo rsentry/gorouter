@@ -47,7 +47,15 @@ then point your browser to http://localhost:8080/items/1.json
 
 ##Creating routes
 anytime you want a variable in the url, surround it with {:}.  This will extract the vaiable name and the url data and place the information in the variable map.
-If there are not any variables, then the url must match your route exactly.  There will be future support for regex in the url as well as "*" and "*.*".
+If there are not any variables, then the url must match your route exactly.  There will be future support for regex in the url as well as "\*" and "\*.\*".
+
+##Future
+This is a lightweight router so there are not many features planned but here is a list of a few that I would like to implement:
+*Custom 404 handler
+*Custom Logging
+*Hooks called before and after handler
+*More complex url handling
+*Open to suggestions
 
 ##About
 
