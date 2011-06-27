@@ -51,11 +51,11 @@ If there are not any variables, then the url must match your route exactly.  The
 
 ##Future
 This is a lightweight router so there are not many features planned but here is a list of a few that I would like to implement:
-*Custom 404 handler
-*Custom Logging
-*Hooks called before and after handler
-*More complex url handling
-*Open to suggestions
+* Custom 404 handler
+* Custom Logging
+* Hooks called before and after handler
+* More complex url handling
+* Open to suggestions
 
 ##About
 
