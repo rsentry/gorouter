@@ -9,7 +9,12 @@ This project is a simple lightweight router for go. Some of the features are:
 * Variable Mapping
 
 ##Installation
-Download file and include in source directory.  Makefile coming soon.
+You need a working installation of go obviously.
+
+The easiest way:
+goinstall github.com/rsentry/gorouter
+
+Or you can download and do make && make install
 
 ##Example
 
@@ -18,7 +23,7 @@ Download file and include in source directory.  Makefile coming soon.
 	import (
 			"http"
 			"fmt"
-			"./router"
+			"github.com/rsentry/gorouter"
 	)
        
 	func itemshandler(w http.ResponseWriter, r *http.Request, v map[string] string){
