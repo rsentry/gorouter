@@ -7,7 +7,7 @@ import (
 		"regexp"
        )
 //package vars
-var	router = new(Router).Init(100)
+var	router = new(Router).Init()
 
 
 //package functions
@@ -31,6 +31,14 @@ func Put(urlquery string, handler func(w http.ResponseWriter, r *http.Request, v
 func Run(address string){
 	http.ListenAndServe(address, router)
 }
+//overide errorhandler
+func Handle404(new404handler func (w http.ResponseWriter, r *http.Request)){
+	router.error404Handler = new404handler
+}
+
+func handle404Error(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Unable to locate resource")
+}
 //structs
 type Route struct {
 	urlMap string //a map of a url
@@ -38,19 +46,17 @@ type Route struct {
 }
 
 type Router struct {
-	post,get,put,delete []Route
+	post,get,put,delete []Route //routes
+	error404Handler func(w http.ResponseWriter, r *http.Request) //handler function
 }
 
 
 //end structs
 
 //router functions
-func (router *Router) Init(routecap int) *Router{
+func (router *Router) Init() *Router{
 	router = new(Router)
-	router.post = make([]Route,0,routecap)
-	router.put = make([]Route,0,routecap)
-	router.delete = make([]Route,0,routecap)
-	router.get = make([]Route,0,routecap)
+	router.error404Handler = handle404Error
 	return router
 }
 
@@ -61,21 +67,13 @@ func (router *Router) AddRoute(method string, urlquery string, handler func(w ht
 	route.handler = handler
 	switch method {
 	case "get":
-		n := len(router.get)
-		router.get = router.get[0:n+1]
-		router.get[n] = route
+		router.get = append(router.get,route)
 	case "post":
-		n := len(router.post)
-		router.post = router.post[0:n+1]
-		router.post[n] = route
+		router.post = append(router.post,route)
 	case "delete":
-		n := len(router.delete)
-		router.delete = router.delete[0:n+1]
-		router.delete[n] = route
+		router.delete = append(router.delete,route)
 	case "put":
-		n := len(router.put)
-		router.put = router.put[0:n+1]
-		router.put[n] = route
+		router.put = append(router.put,route)
 	}
 	return
 }
@@ -95,10 +93,6 @@ func (router *Router) Put(urlquery string, handler func(w http.ResponseWriter, r
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request){ 
 	//check for route in struct
-	path := strings.Split(r.URL.Path,"/",-1)
-	for key , value := range path{
-		fmt.Printf("Route url key %s: %s\n", key, value)
-	}
 	fmt.Printf("Route method: %s\n", r.URL.Path[1:])
 	fmt.Printf("Route method: %s\n", r.Method)
 	foundmatch := false
@@ -114,7 +108,8 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	}
 	if(!foundmatch){
 		//404
-		fmt.Fprintf(w, "No Route Found for url: %s \n", r.RawURL)
+		router.error404Handler(w,r)
+		fmt.Printf("No Route Found for url: %s \n", r.RawURL)
 	}
 }
 //end router functions
