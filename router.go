@@ -239,7 +239,7 @@ func matchRoute(value Route, url string) (bool, map[string]string) {
 					//remove extra from string
 					rx := regexp.MustCompile(urlregex)
 					varstring := rx.ReplaceAllString(url, "")
-					rx = regexp.MustCompile("[a-zA-Z0-9_]*")
+					rx = regexp.MustCompile("[a-zA-Z0-9_-]*")
 					//get filtered string
 					matched := rx.FindStringSubmatch(varstring)
 					switch {
