@@ -32,10 +32,11 @@ package router
 
 import (
 	"fmt"
-	"http"
-	"strings"
+	"net/http"
 	"regexp"
+	"strings"
 )
+
 //package vars
 var router = new(Router).Init()
 
@@ -44,43 +45,53 @@ var router = new(Router).Init()
 func After(urlquery string, handler ...func(w http.ResponseWriter, r *http.Request, v map[string]string)) {
 	router.After(urlquery, handler)
 }
+
 //before
 func Before(urlquery string, handler ...func(w http.ResponseWriter, r *http.Request, v map[string]string)) {
 	router.Before(urlquery, handler)
 }
+
 //get
 func Get(urlquery string, handler ...func(w http.ResponseWriter, r *http.Request, v map[string]string)) {
 	router.Get(urlquery, handler)
 }
+
 //post
 func Post(urlquery string, handler ...func(w http.ResponseWriter, r *http.Request, v map[string]string)) {
 	router.Post(urlquery, handler)
 }
+
 //delete
 func Delete(urlquery string, handler ...func(w http.ResponseWriter, r *http.Request, v map[string]string)) {
 	router.Delete(urlquery, handler)
 }
+
 //put
 func Put(urlquery string, handler ...func(w http.ResponseWriter, r *http.Request, v map[string]string)) {
 	router.Put(urlquery, handler)
 }
+
 //run
 func Run(address string) {
 	http.ListenAndServe(address, router)
 }
+
 //overide errorhandler
 func Handle404(new404handler func(w http.ResponseWriter, r *http.Request)) {
 	router.error404Handler = new404handler
 }
+
 //set close flag to discontinue processing
 func StopRequest(w http.ResponseWriter, r *http.Request) {
 	r.Close = true
 }
+
 //handle 404 error
 func Handle404Error(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "404 Not Found", http.StatusNotFound)
 	StopRequest(w, r)
 }
+
 // Emits a 501 Not Implemented
 func NotImplemented(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "501 Not Implemented", http.StatusNotImplemented)
@@ -113,6 +124,7 @@ func NoContent(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "204 No Content", http.StatusNoContent)
 	StopRequest(w, r)
 }
+
 //structs
 type Route struct {
 	urlMap  string                                                              //a map of a url
@@ -194,9 +206,10 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !foundmatch {
 		//404
 		router.error404Handler(w, r)
-		fmt.Printf("No Route Found for url: %s \n", r.RawURL)
+		fmt.Printf("No Route Found for url: %s \n", r.URL)
 	}
 }
+
 //end router functions
 func matchRoute(value Route, url string) (bool, map[string]string) {
 	startlocation := strings.IndexAny(value.urlMap, "{*")
@@ -226,7 +239,7 @@ func matchRoute(value Route, url string) (bool, map[string]string) {
 					//remove extra from string
 					rx := regexp.MustCompile(urlregex)
 					varstring := rx.ReplaceAllString(url, "")
-					rx = regexp.MustCompile("[a-zA-Z0-9_]*")
+					rx = regexp.MustCompile("[a-zA-Z0-9_-]*")
 					//get filtered string
 					matched := rx.FindStringSubmatch(varstring)
 					switch {
@@ -285,7 +298,7 @@ func findRouterMatch(routes []Route, url string, w http.ResponseWriter, r *http.
 
 func (router *Router) findAfter(url string, w http.ResponseWriter, r *http.Request) {
 	for _, value := range router.after {
-		fmt.Printf("Route executing %s against url %s\n", value.urlMap,url)
+		fmt.Printf("Route executing %s against url %s\n", value.urlMap, url)
 		if value.urlMap == "" {
 			//execute for all requests
 			valuemap := map[string]string{}
